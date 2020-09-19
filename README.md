@@ -4,7 +4,7 @@ Module for searching players in FIFA Ultimate Team CSV Data.
 ## Installing
 Via npm:
 ```
-npm i fut-search
+npm i @benhawley7/fut-search
 ```
 
 ## Data
@@ -27,7 +27,7 @@ By default, the module will look for the CSVs in `/data`
 ## Example
 
 ```js
-const {FUTSearch} = require("fut-search");
+const {FUTSearch} = require("@benhawley7/fut-search");
 const path = require("path");
 
 const fut = new FUTSearch({

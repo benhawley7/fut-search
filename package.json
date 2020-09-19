@@ -1,5 +1,5 @@
 {
-    "name": "fut-search",
+    "name": "@benhawley7/fut-search",
     "version": "0.0.1",
     "description": "Module for searching for players in FIFA Ultimate Team CSV Data.",
     "main": "dist/index.ts",
