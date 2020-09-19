@@ -20,7 +20,7 @@ The CSV needs the following format:
 
 note: Additional headers or uppercase headers should not cause errors.
 
-The game CSVs need to be in an accessible folder with the follwoing naming convention: `FIFA{year}.csv` i.e. `FIFA20.csv` or `FIFA19.csv`.
+The game CSVs need to be in an accessible folder with the following naming convention: `FIFA{year}.csv` i.e. `FIFA20.csv` or `FIFA19.csv`.
 
 By default, the module will look for the CSVs in `/data`
 
