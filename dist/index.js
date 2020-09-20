@@ -44,10 +44,11 @@ class FUTSearch {
     constructor(dataPath) {
         /**
          * Path to the CSV Data
-         * By default, we look two directories up, as this will take us to the project root from the node_modules folder
+         * By default, we look three directories up -
+         * as this will take us to the project root from project/node_modules/@benhawley7/fut-search
          * @private
          */
-        this._dataPath = path.join(__dirname, "../../", "data", "FIFA20.csv");
+        this._dataPath = path.join(__dirname, "../../../", "data", "FIFA20.csv");
         if (dataPath) {
             this.dataPath = dataPath;
         }
@@ -60,6 +61,7 @@ class FUTSearch {
     }
     /**
      * Sets the path to the CSV we wish to query, errors if file does not exist
+     * @param val where to look for our FUT CSV data
      */
     set dataPath(val) {
         const isCSV = val.endsWith(".csv");
@@ -108,8 +110,14 @@ class FUTSearch {
                 }
             }
             else {
-                const partialValueLowerCase = String(partial[key]).toLowerCase();
-                const playerValueLowerCase = String(player[key]).toLowerCase();
+                const partialValueLowerCase = String(partial[key])
+                    .toLowerCase()
+                    .normalize("NFKD")
+                    .replace(/[^\w\s.-_\/]/g, '');
+                const playerValueLowerCase = String(player[key])
+                    .toLowerCase()
+                    .normalize("NFKD")
+                    .replace(/[^\w\s.-_\/]/g, '');
                 if (playerValueLowerCase.includes(partialValueLowerCase) === false) {
                     return false;
                 }

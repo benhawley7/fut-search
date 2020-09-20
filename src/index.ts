@@ -3,15 +3,6 @@ import * as path from "path";
 import { parse } from "@fast-csv/parse";
 
 /**
- * Interface for the arguments of the FUTSearch class
- * @interface
- */
-interface ConstructorOptions {
-    gameYear: string;
-    dataDir: string;
-}
-
-/**
  * Interface for a fully parsed FIFA player
  * @interface
  */
@@ -134,8 +125,14 @@ export class FUTSearch {
                     return false;
                 }
             } else {
-                const partialValueLowerCase = String(partial[key]).toLowerCase();
-                const playerValueLowerCase = String(player[key]).toLowerCase();
+                const partialValueLowerCase = String(partial[key])
+                    .toLowerCase()
+                    .normalize("NFKD")
+                    .replace(/[^\w\s.-_\/]/g, '');
+                const playerValueLowerCase = String(player[key])
+                    .toLowerCase()
+                    .normalize("NFKD")
+                    .replace(/[^\w\s.-_\/]/g, '');
                 if (playerValueLowerCase.includes(partialValueLowerCase) === false) {
                     return false;
                 }
