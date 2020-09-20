@@ -20,7 +20,7 @@ interface Player {
     name: string;
     club: string;
     position: string;
-    tier: string;
+    revision: string;
     league: string;
     rating: number;
     pace: number;
@@ -28,7 +28,7 @@ interface Player {
     passing: number;
     dribbling: number;
     defending: number;
-    physical: number;
+    physicality: number;
 }
 
 /**
@@ -40,7 +40,7 @@ interface PartialPlayer {
     name?: string;
     club?: string;
     position?: string;
-    tier?: string;
+    revision?: string;
     league?: string;
     rating?: number;
     pace?: number;
@@ -48,7 +48,7 @@ interface PartialPlayer {
     passing?: number;
     dribbling?: number;
     defending?: number;
-    physical?: number;
+    physicality?: number;
 }
 
 /**
@@ -59,28 +59,38 @@ export class FUTSearch {
 
     /**
      * Path to the CSV Data
+     * By default, we look three directories up -
+     * as this will take us to the project root from project/node_modules/@benhawley7/fut-search
      * @private
      */
-    private dataDir: string = path.join(__dirname, "../../", "data");
+    private _dataPath: string = path.join(__dirname, "../../../", "data", "FIFA20.csv");
 
     /**
-     * Year of the FIFA Data to query
-     * @public
+     * Returns the path to the current CSV we are accessing
      */
-    public gameYear: string = "20";
+    get dataPath() {
+        return this._dataPath;
+    }
+
+    /**
+     * Sets the path to the CSV we wish to query, errors if file does not exist
+     * @param val where to look for our FUT CSV data
+     */
+    set dataPath(val: string) {
+        const isCSV = val.endsWith(".csv");
+        if (isCSV === false) {
+            throw new Error("dataPath must point to a CSV file");
+        }
+        this._dataPath = val;
+    }
 
     /**
      * Create an instance of FUT
-     * @param options specify the game year and path to use
-     * @param options.gameYear year of the FIFA game to query
-     * @param options.dataDir directory storing the FIFA data CSVs
+     * @param dataPath set where the CSV is located
      */
-    constructor(options: ConstructorOptions) {
-        if (options.gameYear) {
-            this.gameYear = options.gameYear;
-        }
-        if (options.dataDir) {
-            this.dataDir = options.dataDir;
+    constructor(dataPath?: string) {
+        if (dataPath) {
+            this.dataPath = dataPath;
         }
     }
 
@@ -98,7 +108,7 @@ export class FUTSearch {
             name: String(formattedRecord.name),
             club: String(formattedRecord.club),
             position: String(formattedRecord.position),
-            tier: String(formattedRecord.tier),
+            revision: String(formattedRecord.revision),
             league: String(formattedRecord.league),
             rating: parseInt(formattedRecord.rating, 10),
             pace: parseInt(formattedRecord.pace, 10),
@@ -106,7 +116,7 @@ export class FUTSearch {
             passing: parseInt(formattedRecord.passing, 10),
             dribbling: parseInt(formattedRecord.dribbling, 10),
             defending: parseInt(formattedRecord.defending, 10),
-            physical: parseInt(formattedRecord.physical, 10)
+            physicality: parseInt(formattedRecord.physicality, 10)
         };
     }
 
@@ -147,7 +157,7 @@ export class FUTSearch {
             // To find a the matching player, we need to read the CSV. These CSVs have about 15,000
             // rows, so loading the entire CSV into memory doesn't seem sensible.
             // Instead, we can read the CSV as a stream and check each row as it comes in
-            const csvReadStream = fs.createReadStream(path.join(this.dataDir, `FIFA${this.gameYear}.csv`))
+            const csvReadStream = fs.createReadStream(this.dataPath)
                 .on("error", (error) => {
                     rej(error);
                 });
@@ -163,9 +173,9 @@ export class FUTSearch {
                         matchingPlayers.push(player);
                     }
                 })
-                .on('end', (rowCount: number) => {
+                .on('end', () => {
                     if (matchingPlayers.length === 0) {
-                        rej(new Error(`Could not find FIFA${this.gameYear} players for partial player: ${JSON.stringify(playerDetails)}`));
+                        rej(new Error(`Could not find matching players for partial player: ${JSON.stringify(playerDetails)}`));
                     }
                     res(matchingPlayers);
                 });
