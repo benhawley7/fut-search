@@ -39,27 +39,36 @@ const parse_1 = require("@fast-csv/parse");
 class FUTSearch {
     /**
      * Create an instance of FUT
-     * @param options specify the game year and path to use
-     * @param options.gameYear year of the FIFA game to query
-     * @param options.dataDir directory storing the FIFA data CSVs
+     * @param dataPath set where the CSV is located
      */
-    constructor(options) {
+    constructor(dataPath) {
         /**
          * Path to the CSV Data
+         * By default, we look three directories up -
+         * as this will take us to the project root from project/node_modules/@benhawley7/fut-search
          * @private
          */
-        this.dataDir = path.join(__dirname, "../../", "data");
-        /**
-         * Year of the FIFA Data to query
-         * @public
-         */
-        this.gameYear = "20";
-        if (options.gameYear) {
-            this.gameYear = options.gameYear;
+        this._dataPath = path.join(__dirname, "../../../", "data", "FIFA20.csv");
+        if (dataPath) {
+            this.dataPath = dataPath;
         }
-        if (options.dataDir) {
-            this.dataDir = options.dataDir;
+    }
+    /**
+     * Returns the path to the current CSV we are accessing
+     */
+    get dataPath() {
+        return this._dataPath;
+    }
+    /**
+     * Sets the path to the CSV we wish to query, errors if file does not exist
+     * @param val where to look for our FUT CSV data
+     */
+    set dataPath(val) {
+        const isCSV = val.endsWith(".csv");
+        if (isCSV === false) {
+            throw new Error("dataPath must point to a CSV file");
         }
+        this._dataPath = val;
     }
     /**
      * Parse a CSV record as a Player
@@ -75,7 +84,7 @@ class FUTSearch {
             name: String(formattedRecord.name),
             club: String(formattedRecord.club),
             position: String(formattedRecord.position),
-            tier: String(formattedRecord.tier),
+            revision: String(formattedRecord.revision),
             league: String(formattedRecord.league),
             rating: parseInt(formattedRecord.rating, 10),
             pace: parseInt(formattedRecord.pace, 10),
@@ -83,7 +92,7 @@ class FUTSearch {
             passing: parseInt(formattedRecord.passing, 10),
             dribbling: parseInt(formattedRecord.dribbling, 10),
             defending: parseInt(formattedRecord.defending, 10),
-            physical: parseInt(formattedRecord.physical, 10)
+            physicality: parseInt(formattedRecord.physicality, 10)
         };
     }
     /**
@@ -101,8 +110,14 @@ class FUTSearch {
                 }
             }
             else {
-                const partialValueLowerCase = String(partial[key]).toLowerCase();
-                const playerValueLowerCase = String(player[key]).toLowerCase();
+                const partialValueLowerCase = String(partial[key])
+                    .toLowerCase()
+                    .normalize("NFKD")
+                    .replace(/[^\w\s.-_\/]/g, '');
+                const playerValueLowerCase = String(player[key])
+                    .toLowerCase()
+                    .normalize("NFKD")
+                    .replace(/[^\w\s.-_\/]/g, '');
                 if (playerValueLowerCase.includes(partialValueLowerCase) === false) {
                     return false;
                 }
@@ -122,7 +137,7 @@ class FUTSearch {
             // To find a the matching player, we need to read the CSV. These CSVs have about 15,000
             // rows, so loading the entire CSV into memory doesn't seem sensible.
             // Instead, we can read the CSV as a stream and check each row as it comes in
-            const csvReadStream = fs.createReadStream(path.join(this.dataDir, `FIFA${this.gameYear}.csv`))
+            const csvReadStream = fs.createReadStream(this.dataPath)
                 .on("error", (error) => {
                 rej(error);
             });
@@ -137,9 +152,9 @@ class FUTSearch {
                     matchingPlayers.push(player);
                 }
             })
-                .on('end', (rowCount) => {
+                .on('end', () => {
                 if (matchingPlayers.length === 0) {
-                    rej(new Error(`Could not find FIFA${this.gameYear} players for partial player: ${JSON.stringify(playerDetails)}`));
+                    rej(new Error(`Could not find matching players for partial player: ${JSON.stringify(playerDetails)}`));
                 }
                 res(matchingPlayers);
             });

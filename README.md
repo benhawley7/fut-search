@@ -10,13 +10,11 @@ npm i @benhawley7/fut-search
 ## Data
 You will need a local set of FUT CSV data to point the module towards.
 
-A good source of this data can be found here: https://github.com/kafagy/fifa-FUT-Data
-
 
 The CSV needs the following format:
-| name            | club              | league                 | position | tier | rating | pace | shooting | passing | dribbling | defending | physical |
-|-----------------|-------------------|------------------------|----------|------|--------|------|----------|---------|-----------|-----------|----------|
-| Anthony Martial | Manchester United | England Premier League | LW       | Gold | 85     | 86   | 75       | 83      | 78        | 80        | 74       |
+| name            | club              | league         | position | revision | rating | pace | shooting | passing | dribbling | defending | physicality |
+|-----------------|-------------------|----------------|----------|----------|--------|------|----------|---------|-----------|-----------|-------------|
+| Anthony Martial | Manchester United | Premier League | LW       | Normal   | 83     | 89   | 81       | 72      | 87        | 41        | 71          |
 
 note: Additional headers or uppercase headers should not cause errors.
 
@@ -30,28 +28,29 @@ By default, the module will look for the CSVs in `/data`
 const {FUTSearch} = require("@benhawley7/fut-search");
 const path = require("path");
 
-const fut = new FUTSearch({
-    gameYear: "20", // Which FIFA game year?
-    dataDir: path.join(__dirname, "data") // Where is your CSV data stored?
-})
+const fut = new FUTSearch(
+    path.join(__dirname, "my-data", "FIFA20.csv") // Where is your CSV data stored?
+)
 
 // Find a player with given attributes
 fut.findPlayer({
     name: "Rashford",
-    club: "Manchester United"
+    club: "Manchester United",
+    revision: "Normal"
 }).then(player => {
     // {
     //     name: 'Marcus Rashford',
     //     club: 'Manchester United',
     //     position: 'ST',
-    //     tier: 'Gold',
+    //     revision: 'Normal',
+    //     league: 'Premier League',
     //     rating: 83,
-    //     pace: 81,
-    //     shooting: 75,
-    //     passing: 81,
-    //     dribbling: 87,
-    //     defending: 60,
-    //     physical: 66
+    //     pace: 92,
+    //     shooting: 82,
+    //     passing: 73,
+    //     dribbling: 85,
+    //     defending: 45,
+    //     physicality: 77
     // }
 })
 
@@ -59,38 +58,41 @@ fut.findPlayer({
 fut.listPlayers({
     position: "ST",
     rating: 89,
-    league: "Premier League"
+    league: "Premier League",
 }).then(players => {
     // [
     //     {
-    //       name: 'Pierre-Emerick Aubame...',
-    //       club: 'Arsenal',
-    //       position: 'ST',
-    //       tier: 'Gold',
-    //       league: 'England Premier League',
-    //       rating: 89,
-    //       pace: 42,
-    //       shooting: 62,
-    //       passing: 80,
-    //       dribbling: 81,
-    //       defending: 85,
-    //       physical: 80
+    //         name: 'Sergio Agüero',
+    //         club: 'Manchester City',
+    //         position: 'ST',
+    //         revision: 'Normal',
+    //         league: 'Premier League',
+    //         rating: 89,
+    //         pace: 80,
+    //         shooting: 90,
+    //         passing: 77,
+    //         dribbling: 88,
+    //         defending: 33,
+    //         physicality: 74
     //     },
     //     {
-    //       name: 'Sergio Agüero',
-    //       club: 'Manchester City',
-    //       position: 'ST',
-    //       tier: 'Gold',
-    //       league: 'England Premier League',
-    //       rating: 89,
-    //       pace: 72,
-    //       shooting: 68,
-    //       passing: 75,
-    //       dribbling: 74,
-    //       defending: 87,
-    //       physical: 85
-    //     },
+    //         name: 'Harry Kane',
+    //         club: 'Tottenham Hotspur',
+    //         position: 'ST',
+    //         revision: 'Normal',
+    //         league: 'Premier League',
+    //         rating: 89,
+    //         pace: 70,
+    //         shooting: 91,
+    //         passing: 79,
+    //         dribbling: 80,
+    //         defending: 47,
+    //         physicality: 83
+    //     }
     //     ...
     // ]
 });
 ```
+
+## Known Issues
+- Goalkeepers not currently supported

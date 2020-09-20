@@ -1,12 +1,4 @@
 /**
- * Interface for the arguments of the FUTSearch class
- * @interface
- */
-interface ConstructorOptions {
-    gameYear: string;
-    dataDir: string;
-}
-/**
  * Interface for a fully parsed FIFA player
  * @interface
  */
@@ -15,7 +7,7 @@ interface Player {
     name: string;
     club: string;
     position: string;
-    tier: string;
+    revision: string;
     league: string;
     rating: number;
     pace: number;
@@ -23,7 +15,7 @@ interface Player {
     passing: number;
     dribbling: number;
     defending: number;
-    physical: number;
+    physicality: number;
 }
 /**
  * Interface for a player with partial stats
@@ -34,7 +26,7 @@ interface PartialPlayer {
     name?: string;
     club?: string;
     position?: string;
-    tier?: string;
+    revision?: string;
     league?: string;
     rating?: number;
     pace?: number;
@@ -42,7 +34,7 @@ interface PartialPlayer {
     passing?: number;
     dribbling?: number;
     defending?: number;
-    physical?: number;
+    physicality?: number;
 }
 /**
  * Class to search FUT CSV data for Players
@@ -51,21 +43,25 @@ interface PartialPlayer {
 export declare class FUTSearch {
     /**
      * Path to the CSV Data
+     * By default, we look three directories up -
+     * as this will take us to the project root from project/node_modules/@benhawley7/fut-search
      * @private
      */
-    private dataDir;
+    private _dataPath;
     /**
-     * Year of the FIFA Data to query
-     * @public
+     * Returns the path to the current CSV we are accessing
      */
-    gameYear: string;
+    get dataPath(): string;
+    /**
+     * Sets the path to the CSV we wish to query, errors if file does not exist
+     * @param val where to look for our FUT CSV data
+     */
+    set dataPath(val: string);
     /**
      * Create an instance of FUT
-     * @param options specify the game year and path to use
-     * @param options.gameYear year of the FIFA game to query
-     * @param options.dataDir directory storing the FIFA data CSVs
+     * @param dataPath set where the CSV is located
      */
-    constructor(options: ConstructorOptions);
+    constructor(dataPath?: string);
     /**
      * Parse a CSV record as a Player
      * @param record the csv row
