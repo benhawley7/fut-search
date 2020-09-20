@@ -43,7 +43,8 @@ interface PartialPlayer {
 export declare class FUTSearch {
     /**
      * Path to the CSV Data
-     * By default, we look two directories up, as this will take us to the project root from the node_modules folder
+     * By default, we look three directories up -
+     * as this will take us to the project root from project/node_modules/@benhawley7/fut-search
      * @private
      */
     private _dataPath;
@@ -53,6 +54,7 @@ export declare class FUTSearch {
     get dataPath(): string;
     /**
      * Sets the path to the CSV we wish to query, errors if file does not exist
+     * @param val where to look for our FUT CSV data
      */
     set dataPath(val: string);
     /**
