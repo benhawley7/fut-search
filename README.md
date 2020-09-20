@@ -93,3 +93,6 @@ fut.listPlayers({
     // ]
 });
 ```
+
+## Known Issues
+- Goalkeepers not currently supported
