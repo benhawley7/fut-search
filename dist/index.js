@@ -1,4 +1,10 @@
 "use strict";
+/**
+ * @package fut-search
+ * @author Ben Hawley
+ * @file Contains class for streaming and searching FUT CSV data
+ * @copyright Ben Hawley 2020
+ */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -126,40 +132,67 @@ class FUTSearch {
         return true;
     }
     /**
-     * Read players from CSV and find matches to a supplied partial player
+     * Finding matching players for a batch of partial players
+     * @param partialPlayers array of partials to find
+     * @param options flags for search
+     * @param options.firstMatchOnly if true we return only the first match for each partial
+     * @returns array of matching players for each partial supplied
+     */
+    listPlayersBatch(partialPlayers, options = {}) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((res, rej) => {
+                // We store an array of each partial containing its player matches
+                const matchingPlayers = partialPlayers.map(() => []);
+                // To find a the matching player, we need to read the CSV. These CSVs have about 15,000
+                // rows, so loading the entire CSV into memory doesn't seem sensible.
+                // Instead, we can read the CSV as a stream and check each row as it comes in
+                const csvReadStream = fs.createReadStream(this.dataPath)
+                    .on("error", (error) => {
+                    rej(error);
+                });
+                // The parse and match CSV Parser Stream will have the CSV stream piped into it, for each row of data
+                // it will parse the data into our Player interface and will check if it is a match on our
+                // input name and club. Upon completion, it will resolve the matching player, or reject with an error.
+                const parseAndMatch = parse_1.parse({ headers: true })
+                    .on('error', error => rej(new Error(`Error parsing CSV: ${error.message}`)))
+                    .on('data', row => {
+                    // With the first match only flag, we resolve early if we have one match for every player
+                    const canEarlyResolve = options.firstMatchOnly && matchingPlayers.every(playerMatch => playerMatch.length > 0);
+                    if (canEarlyResolve) {
+                        // Resolve the early matches
+                        res(matchingPlayers);
+                        // Destroy the streams
+                        csvReadStream.destroy();
+                        parseAndMatch.destroy();
+                        return;
+                    }
+                    // Parse the current row as a complete player
+                    const player = FUTSearch.parsePlayer(row);
+                    for (const [index, partial] of partialPlayers.entries()) {
+                        const isMatch = FUTSearch.playerMatch(partial, player);
+                        const partialComplete = options.firstMatchOnly && matchingPlayers[index].length > 0;
+                        if (isMatch === true && partialComplete === false) {
+                            matchingPlayers[index].push(player);
+                        }
+                    }
+                })
+                    .on('end', () => {
+                    res(matchingPlayers);
+                });
+                // Pipe the CSV into the parseAndMatch CSV Parser Stream
+                csvReadStream.pipe(parseAndMatch);
+            });
+        });
+    }
+    /**
+     * Finding matching players for a supplied partial player
      * @param playerDetails partial player stats
      * @returns array of matching players
      */
     listPlayers(playerDetails = {}) {
-        return new Promise((res, rej) => {
-            // Store any matching players from the CSV here
-            const matchingPlayers = [];
-            // To find a the matching player, we need to read the CSV. These CSVs have about 15,000
-            // rows, so loading the entire CSV into memory doesn't seem sensible.
-            // Instead, we can read the CSV as a stream and check each row as it comes in
-            const csvReadStream = fs.createReadStream(this.dataPath)
-                .on("error", (error) => {
-                rej(error);
-            });
-            // The parse and match CSV Parser Stream will have the CSV stream piped into it, for each row of data
-            // it will parse the data into our Player interface and will check if it is a match on our
-            // input name and club. Upon completion, it will resolve the matching player, or reject with an error.
-            const parseAndMatch = parse_1.parse({ headers: true })
-                .on('error', error => rej(new Error(`Error finding player: ${error.message}`)))
-                .on('data', row => {
-                const player = FUTSearch.parsePlayer(row);
-                if (FUTSearch.playerMatch(playerDetails, player)) {
-                    matchingPlayers.push(player);
-                }
-            })
-                .on('end', () => {
-                if (matchingPlayers.length === 0) {
-                    rej(new Error(`Could not find matching players for partial player: ${JSON.stringify(playerDetails)}`));
-                }
-                res(matchingPlayers);
-            });
-            // Pipe the CSV into the parseAndMatch CSV Parser Stream
-            csvReadStream.pipe(parseAndMatch);
+        return __awaiter(this, void 0, void 0, function* () {
+            const [players] = yield this.listPlayersBatch([playerDetails]);
+            return players;
         });
     }
     /**
@@ -169,10 +202,8 @@ class FUTSearch {
      */
     findPlayer(playerDetails) {
         return __awaiter(this, void 0, void 0, function* () {
-            const players = yield this.listPlayers(playerDetails);
-            // Naive approach of taking the first player.
-            // Need to think of a better approach.
-            return players[0];
+            const [[player]] = yield this.listPlayersBatch([playerDetails], { firstMatchOnly: true });
+            return player;
         });
     }
 }

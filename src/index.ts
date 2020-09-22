@@ -1,3 +1,10 @@
+/**
+ * @package fut-search
+ * @author Ben Hawley
+ * @file Contains class for streaming and searching FUT CSV data
+ * @copyright Ben Hawley 2020
+ */
+
 import * as fs from "fs";
 import * as path from "path";
 import { parse } from "@fast-csv/parse";
@@ -40,6 +47,14 @@ interface PartialPlayer {
     dribbling?: number;
     defending?: number;
     physicality?: number;
+}
+
+/**
+ * Interface for listPlayersBatch flags
+ * @interface
+ */
+interface ListPlayersBatchOptions {
+    firstMatchOnly?: boolean;
 }
 
 /**
@@ -142,14 +157,16 @@ export class FUTSearch {
     }
 
     /**
-     * Read players from CSV and find matches to a supplied partial player
-     * @param playerDetails partial player stats
-     * @returns array of matching players
+     * Finding matching players for a batch of partial players
+     * @param partialPlayers array of partials to find
+     * @param options flags for search
+     * @param options.firstMatchOnly if true we return only the first match for each partial
+     * @returns array of matching players for each partial supplied
      */
-    listPlayers(playerDetails: PartialPlayer = {}): Promise<Player[]> {
+    async listPlayersBatch(partialPlayers: PartialPlayer[], options: ListPlayersBatchOptions = {}): Promise<Player[][]> {
         return new Promise((res, rej) => {
-            // Store any matching players from the CSV here
-            const matchingPlayers: Player[] = [];
+            // We store an array of each partial containing its player matches
+            const matchingPlayers: Player[][] = partialPlayers.map(() => []);
 
             // To find a the matching player, we need to read the CSV. These CSVs have about 15,000
             // rows, so loading the entire CSV into memory doesn't seem sensible.
@@ -163,17 +180,31 @@ export class FUTSearch {
             // it will parse the data into our Player interface and will check if it is a match on our
             // input name and club. Upon completion, it will resolve the matching player, or reject with an error.
             const parseAndMatch = parse({ headers: true })
-                .on('error', error => rej(new Error(`Error finding player: ${error.message}`)))
+                .on('error', error => rej(new Error(`Error parsing CSV: ${error.message}`)))
                 .on('data', row => {
+                    // With the first match only flag, we resolve early if we have one match for every player
+                    const canEarlyResolve = options.firstMatchOnly && matchingPlayers.every(playerMatch => playerMatch.length > 0);
+                    if (canEarlyResolve) {
+                        // Resolve the early matches
+                        res(matchingPlayers);
+
+                        // Destroy the streams
+                        csvReadStream.destroy();
+                        parseAndMatch.destroy();
+                        return;
+                    }
+
+                    // Parse the current row as a complete player
                     const player = FUTSearch.parsePlayer(row);
-                    if (FUTSearch.playerMatch(playerDetails, player)) {
-                        matchingPlayers.push(player);
+                    for (const [index, partial] of partialPlayers.entries()) {
+                        const isMatch = FUTSearch.playerMatch(partial, player);
+                        const partialComplete = options.firstMatchOnly && matchingPlayers[index].length > 0;
+                        if (isMatch === true && partialComplete === false) {
+                            matchingPlayers[index].push(player);
+                        }
                     }
                 })
                 .on('end', () => {
-                    if (matchingPlayers.length === 0) {
-                        rej(new Error(`Could not find matching players for partial player: ${JSON.stringify(playerDetails)}`));
-                    }
                     res(matchingPlayers);
                 });
 
@@ -183,15 +214,22 @@ export class FUTSearch {
     }
 
     /**
+     * Finding matching players for a supplied partial player
+     * @param playerDetails partial player stats
+     * @returns array of matching players
+     */
+    async listPlayers(playerDetails: PartialPlayer = {}): Promise<Player[]> {
+        const [players] = await this.listPlayersBatch([playerDetails]);
+        return players;
+    }
+
+    /**
      * Find a player with the supplied stats
      * @param playerDetails partial player stats
      * @returns player
      */
-    async findPlayer(playerDetails: PartialPlayer): Promise<Player> {
-        const players = await this.listPlayers(playerDetails);
-
-        // Naive approach of taking the first player.
-        // Need to think of a better approach.
-        return players[0];
+    async findPlayer(playerDetails: PartialPlayer): Promise<Player|undefined> {
+        const [[player]] = await this.listPlayersBatch([playerDetails], {firstMatchOnly: true});
+        return player;
     }
 }
