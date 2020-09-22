@@ -1,4 +1,10 @@
 /**
+ * @package fut-search
+ * @author Ben Hawley
+ * @file Contains class for streaming and searching FUT CSV data
+ * @copyright Ben Hawley 2020
+ */
+/**
  * Interface for a fully parsed FIFA player
  * @interface
  */
@@ -35,6 +41,13 @@ interface PartialPlayer {
     dribbling?: number;
     defending?: number;
     physicality?: number;
+}
+/**
+ * Interface for listPlayersBatch flags
+ * @interface
+ */
+interface ListPlayersBatchOptions {
+    firstMatchOnly?: boolean;
 }
 /**
  * Class to search FUT CSV data for Players
@@ -76,7 +89,15 @@ export declare class FUTSearch {
      */
     static playerMatch(partial: PartialPlayer, player: Player): boolean;
     /**
-     * Read players from CSV and find matches to a supplied partial player
+     * Finding matching players for a batch of partial players
+     * @param partialPlayers array of partials to find
+     * @param options flags for search
+     * @param options.firstMatchOnly if true we return only the first match for each partial
+     * @returns array of matching players for each partial supplied
+     */
+    listPlayersBatch(partialPlayers: PartialPlayer[], options?: ListPlayersBatchOptions): Promise<Player[][]>;
+    /**
+     * Finding matching players for a supplied partial player
      * @param playerDetails partial player stats
      * @returns array of matching players
      */
@@ -86,6 +107,6 @@ export declare class FUTSearch {
      * @param playerDetails partial player stats
      * @returns player
      */
-    findPlayer(playerDetails: PartialPlayer): Promise<Player>;
+    findPlayer(playerDetails: PartialPlayer): Promise<Player | undefined>;
 }
 export {};
