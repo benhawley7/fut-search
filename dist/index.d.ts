@@ -8,7 +8,7 @@
  * Interface for a fully parsed FIFA player
  * @interface
  */
-interface Player {
+export interface Player {
     [key: string]: string | number;
     name: string;
     club: string;
@@ -27,7 +27,7 @@ interface Player {
  * Interface for a player with partial stats
  * @interface
  */
-interface PartialPlayer {
+export interface PartialPlayer {
     [key: string]: string | number | undefined;
     name?: string;
     club?: string;
