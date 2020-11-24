@@ -163,7 +163,7 @@ export class FUTSearch {
      * @param options.firstMatchOnly if true we return only the first match for each partial
      * @returns array of matching players for each partial supplied
      */
-    async listPlayersBatch(partialPlayers: PartialPlayer[], options: ListPlayersBatchOptions = {}): Promise<Player[][]> {
+    async listPlayersBatch(partialPlayers: PartialPlayer[], options: ListPlayersBatchOptions = {firstMatchOnly: false}): Promise<Player[][]> {
         return new Promise((res, rej) => {
             // We store an array of each partial containing its player matches
             const matchingPlayers: Player[][] = partialPlayers.map(() => []);

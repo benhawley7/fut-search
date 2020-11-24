@@ -138,7 +138,7 @@ class FUTSearch {
      * @param options.firstMatchOnly if true we return only the first match for each partial
      * @returns array of matching players for each partial supplied
      */
-    listPlayersBatch(partialPlayers, options = {}) {
+    listPlayersBatch(partialPlayers, options = { firstMatchOnly: false }) {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((res, rej) => {
                 // We store an array of each partial containing its player matches
